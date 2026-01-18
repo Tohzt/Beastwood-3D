@@ -1,0 +1,65 @@
+[gd_scene load_steps=10 format=3 uid="uid://xh7ar2yctel1"]
+
+[ext_resource type="Script" uid="uid://bqm4y3cho3t8g" path="res://Furniture/change_appearance.gd" id="1_ne5n6"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ulhvq"]
+size = Vector3(0.4, 0.75, 3.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ne5n6"]
+shading_mode = 2
+albedo_color = Color(0.5764706, 1, 1, 1)
+metallic = 1.0
+emission_enabled = true
+emission = Color(0.9166399, 0.91663986, 0.9166398, 1)
+emission_energy_multiplier = 0.03
+
+[sub_resource type="BoxMesh" id="BoxMesh_ne5n6"]
+material = SubResource("StandardMaterial3D_ne5n6")
+size = Vector3(0.4, 0.75, 3.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ne5n6"]
+size = Vector3(0.12, 0.15, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o4vwq"]
+albedo_color = Color(1, 0.23529412, 0.22352941, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_j2apn"]
+material = SubResource("StandardMaterial3D_o4vwq")
+size = Vector3(0.12, 0.15, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_te3q5"]
+shading_mode = 0
+
+[sub_resource type="BoxMesh" id="BoxMesh_20sn1"]
+material = SubResource("StandardMaterial3D_te3q5")
+flip_faces = true
+size = Vector3(0.14, 0.17, 0.32)
+
+[node name="Bathroom Sink" type="StaticBody3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_ulhvq")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CollisionShape3D"]
+mesh = SubResource("BoxMesh_ne5n6")
+
+[node name="ColorPickerBlock" type="StaticBody3D" parent="." groups=["ColorPickerBlock"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+collision_layer = 5
+axis_lock_linear_x = true
+axis_lock_linear_y = true
+axis_lock_linear_z = true
+axis_lock_angular_x = true
+axis_lock_angular_y = true
+axis_lock_angular_z = true
+script = ExtResource("1_ne5n6")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ColorPickerBlock"]
+shape = SubResource("BoxShape3D_ne5n6")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ColorPickerBlock/CollisionShape3D"]
+mesh = SubResource("BoxMesh_j2apn")
+skeleton = NodePath("../..")
+
+[node name="Outline" type="MeshInstance3D" parent="ColorPickerBlock"]
+mesh = SubResource("BoxMesh_20sn1")

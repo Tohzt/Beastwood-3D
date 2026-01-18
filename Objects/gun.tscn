@@ -1,0 +1,211 @@
+[gd_scene load_steps=14 format=3 uid="uid://isxevj0teels"]
+
+[ext_resource type="PackedScene" uid="uid://bb3fjvsvpd6ac" path="res://Assets/Objects/Gun/gun.glb" id="1_6ayh0"]
+[ext_resource type="Script" uid="uid://ckinrcllsgxt1" path="res://Objects/gun.gd" id="2_f1gae"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wxf7r"]
+albedo_color = Color(0.133333, 0.133333, 0.133333, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_f8f1m"]
+size = Vector3(0.0662312, 0.211766, 0.114178)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_giq4u"]
+shading_mode = 0
+
+[sub_resource type="BoxMesh" id="BoxMesh_n3eqf"]
+material = SubResource("StandardMaterial3D_giq4u")
+flip_faces = true
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_mx1oj"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("AnimationPlayer:current_animation")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+
+[sub_resource type="Animation" id="Animation_oaqh4"]
+resource_name = "Flip_Backward"
+length = 0.5
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("gun_001:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0.0335884, -0.034969), Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("gun_001:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, -3.14159, 0), Vector3(-6.28319, -3.14159, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_haqa0"]
+resource_name = "Flip_Forward"
+length = 0.5
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("gun_001:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0.0335884, -0.034969), Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("gun_001:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, -3.14159, 0), Vector3(6.28319, -3.14159, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_44l1w"]
+resource_name = "Idle"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("gun_001:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -3.14159, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("gun_001:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_ugsiy"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("gun_001:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("gun_001:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(6.28319, -3.14159, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_wkn0k"]
+resource_name = "Recoil"
+length = 0.3
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("gun_001:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0.0292539, 0.0772993), Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("gun_001:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, -3.14159, 0), Vector3(-0.499059, -3.14159, -8.23051e-08), Vector3(0, -3.14159, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_07us5"]
+_data = {
+&"Flip_Backward": SubResource("Animation_oaqh4"),
+&"Flip_Forward": SubResource("Animation_haqa0"),
+&"Idle": SubResource("Animation_44l1w"),
+&"RESET": SubResource("Animation_ugsiy"),
+&"Recoil": SubResource("Animation_wkn0k")
+}
+
+[node name="Gun" type="RigidBody3D" groups=["Other"] instance=ExtResource("1_6ayh0")]
+collision_layer = 4
+collision_mask = 5
+script = ExtResource("2_f1gae")
+
+[node name="gun_001" parent="." index="0"]
+transform = Transform3D(-1.5, -1.6984626e-11, -3.8027724e-06, 0, 1.5, -6.69957e-06, 3.8027724e-06, -6.69957e-06, -1.5, 0, 0, 0)
+surface_material_override/0 = SubResource("StandardMaterial3D_wxf7r")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." index="1"]
+transform = Transform3D(1.5, 0, 0, 0, -6.55671e-08, -1.5, 0, 1.5, -6.55671e-08, -1.92784e-09, -0.0271253, -0.0346409)
+shape = SubResource("BoxShape3D_f8f1m")
+
+[node name="Outline" type="Node3D" parent="." index="2"]
+visible = false
+
+[node name="Outline_1" type="MeshInstance3D" parent="Outline" index="0"]
+transform = Transform3D(-0.05, 0, 0, 0, 0.0589918, -2.52174e-08, 0, 5.15724e-09, 0.288454, 0, 0.0254028, -0.0449975)
+mesh = SubResource("BoxMesh_n3eqf")
+skeleton = NodePath("../..")
+
+[node name="Outline_2" type="MeshInstance3D" parent="Outline" index="1"]
+transform = Transform3D(-0.05, 0, 0, 0, 0.019624, -0.146012, 0, 0.0850414, 0.0336933, 0, -0.0382443, 0.0669337)
+mesh = SubResource("BoxMesh_n3eqf")
+skeleton = NodePath("../..")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." index="3"]
+replication_config = SubResource("SceneReplicationConfig_mx1oj")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." index="4"]
+libraries = {
+&"": SubResource("AnimationLibrary_07us5")
+}

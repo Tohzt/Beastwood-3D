@@ -1,0 +1,232 @@
+[gd_scene load_steps=14 format=3 uid="uid://dgxhfr0nkfmqo"]
+
+[ext_resource type="Script" uid="uid://cbcqyeuwiqgqf" path="res://Player/Player.gd" id="1_if7sf"]
+[ext_resource type="Texture2D" uid="uid://dyniaa66gx7gf" path="res://Assets/Player/reticle.png" id="5_gvxap"]
+
+[sub_resource type="Animation" id="Animation_igii0"]
+resource_name = "Backflip"
+length = 0.5
+
+[sub_resource type="Animation" id="Animation_lyku4"]
+resource_name = "Crouch"
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CollisionShape3D:shape:height")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.595289]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CollisionShape3D:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.00375521, -0.804184, 4.8642e-08)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("TwistPivot:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -0.371497, 9.95563e-08)]
+}
+
+[sub_resource type="Animation" id="Animation_qu4el"]
+resource_name = "Idle"
+length = 0.001
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CollisionShape3D:shape:height")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [1.19641]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CollisionShape3D:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.00375521, -0.525893, -1.60298e-11)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("TwistPivot:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0.197897, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_t0evj"]
+length = 0.001
+
+[sub_resource type="Animation" id="Animation_jon2q"]
+resource_name = "Wiggle"
+loop_mode = 1
+
+[sub_resource type="Animation" id="Animation_n10lu"]
+resource_name = "jump_prepare"
+length = 0.5
+
+[sub_resource type="Animation" id="Animation_f2o8s"]
+resource_name = "jump_release"
+length = 0.25
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_lyuxh"]
+_data = {
+&"Backflip": SubResource("Animation_igii0"),
+&"Crouch": SubResource("Animation_lyku4"),
+&"Idle": SubResource("Animation_qu4el"),
+&"RESET": SubResource("Animation_t0evj"),
+&"Wiggle": SubResource("Animation_jon2q"),
+&"jump_prepare": SubResource("Animation_n10lu"),
+&"jump_release": SubResource("Animation_f2o8s")
+}
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_t7xog"]
+height = 1.19641
+radius = 0.198113
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_4ntmi"]
+top_radius = 0.25
+bottom_radius = 0.25
+height = 1.2
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_247qs"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("TwistPivot:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("TwistPivot/PitchPivot:rotation")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath("TwistPivot/PitchPivot/Hand:position")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath("DeformableMeshInstance3D:rotation")
+properties/4/spawn = true
+properties/4/replication_mode = 1
+properties/5/path = NodePath("AnimationPlayer:current_animation")
+properties/5/spawn = true
+properties/5/replication_mode = 1
+properties/6/path = NodePath(".:color")
+properties/6/spawn = true
+properties/6/replication_mode = 1
+properties/7/path = NodePath(".:rotation")
+properties/7/spawn = true
+properties/7/replication_mode = 1
+
+[node name="Player" type="CharacterBody3D" groups=["Players"]]
+collision_layer = 2
+script = ExtResource("1_if7sf")
+first_person = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+reset_on_save = false
+libraries = {
+&"": SubResource("AnimationLibrary_lyuxh")
+}
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CylinderShape3D_t7xog")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CollisionShape3D"]
+mesh = SubResource("CylinderMesh_4ntmi")
+skeleton = NodePath("../..")
+
+[node name="TwistPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.197897, 0)
+
+[node name="PitchPivot" type="Node3D" parent="TwistPivot"]
+
+[node name="Hand" type="Marker3D" parent="TwistPivot/PitchPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, -0.3, -0.5)
+
+[node name="Interact" type="RayCast3D" parent="TwistPivot/PitchPivot"]
+target_position = Vector3(0, 0, -4)
+collision_mask = 4
+
+[node name="SpringArm3D" type="SpringArm3D" parent="TwistPivot/PitchPivot"]
+spring_length = 2.0
+
+[node name="Camera3D" type="Camera3D" parent="TwistPivot/PitchPivot/SpringArm3D"]
+fov = 82.4
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_247qs")
+
+[node name="Reticle" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("5_gvxap")
+stretch_mode = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 6
+size_flags_vertical = 8
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_bottom = 16
+
+[node name="FlipPowerLabel" type="Label" parent="MarginContainer"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 22
+text = "Flip Power: "
+
+[node name="ItsGarbage" type="Label" parent="MarginContainer"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 22
+text = "What's that?
+Oh... It's garbage."
+horizontal_alignment = 1

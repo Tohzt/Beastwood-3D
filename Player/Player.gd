@@ -1,0 +1,224 @@
+extends CharacterBody3D
+
+const SPEED = 4.0
+const JUMP_VELOCITY = 3.3
+const TRAMPOLINE_JUMP_MULTIPLIER = 2.0
+const TRAMPOLINE_BOUNCE_BASE = 2.5
+const TRAMPOLINE_BOUNCE_DAMPING = 0.6
+const TRAMPOLINE_JUMP_BOOST = 1.5
+var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
+var previous_velocity_y = 0.0
+var flip_power = 0
+@onready var flip_power_label = $MarginContainer/FlipPowerLabel
+@onready var its_garbage = $MarginContainer/ItsGarbage
+@onready var camera = $TwistPivot/PitchPivot/SpringArm3D/Camera3D
+@onready var material = $CollisionShape3D/MeshInstance3D
+@onready var swing_arm = $TwistPivot/PitchPivot/SpringArm3D
+@onready var interact = $TwistPivot/PitchPivot/Interact
+@onready var hand = $TwistPivot/PitchPivot/Hand
+@onready var twist_pivot := $TwistPivot
+@onready var pitch_pivot := $TwistPivot/PitchPivot
+@export var first_person: bool = false
+@export var color = Color(0,0,0,1)
+var item_in_hand
+var mouse_sensativity := 0.001
+var twist_input := 0.0
+var pitch_input := 0.0
+@onready var animation_player = $AnimationPlayer
+
+var spawn_origin: Vector3
+var hand_origin: Vector3
+
+var is_sprinting: bool = false
+
+func _enter_tree():
+	set_multiplayer_authority(str(name).to_int())
+
+func _ready():
+	animation_player.play("Idle")
+	if not is_multiplayer_authority(): return
+	get_parent().mirror.MainCamPath = camera.get_path()
+	toggle_first_person(first_person)
+	spawn_origin = position
+	hand_origin = hand.position
+	camera.current = true
+
+func _process(delta):
+	if !is_multiplayer_authority(): return
+	
+	## TODO: Weird Garbage pre-garbage
+	var selected_item = interact.get_collider()
+	if selected_item:
+		print("pointing at: ", selected_item.name)
+		if selected_item.name == "Garbage" and Input.is_action_just_pressed("interact"):
+			if !its_garbage.visible:
+				its_garbage.show()
+				await get_tree().create_timer(2).timeout
+				its_garbage.hide()
+		if selected_item.name == "ColorPickerBlock" and Input.is_action_just_pressed("interact"):
+			selected_item.open_colorpicker()
+	
+	flip_power_label.visible = false
+	if item_in_hand:
+		hand.position = hand_origin + item_in_hand.offset
+		if item_in_hand.name == "PNC":
+			flip_power_label.text = "Flicka Da Wrist: " + str(flip_power)
+			if flip_power == 100:
+				flip_power_label.text = "Dat Wrist!"
+			flip_power_label.visible = true
+	
+	if animation_player.current_animation == "Backflip":
+		var flip_rotation = deg_to_rad(lerp(0,360,animation_player.current_animation_position/animation_player.current_animation_length))
+		if first_person:
+			pitch_pivot.rotation.x = flip_rotation
+		material.rotation.x = flip_rotation
+	
+	if is_on_floor():
+		if Input.is_action_just_pressed("jump"):
+			animation_player.play("jump_prepare")
+		if Input.is_action_just_released("jump"):
+			var jump_mult = animation_player.current_animation_position/animation_player.current_animation_length
+			var base_jump = JUMP_VELOCITY + JUMP_VELOCITY*jump_mult
+			
+			# Check if standing on a trampoline
+			var is_on_trampoline = false
+			var collision = get_last_slide_collision()
+			if collision:
+				var collider = collision.get_collider()
+				if collider and collider.is_in_group("Trampoline"):
+					is_on_trampoline = true
+			
+			# Apply trampoline multiplier if on trampoline
+			if is_on_trampoline:
+				velocity.y = base_jump * TRAMPOLINE_JUMP_MULTIPLIER
+			else:
+				velocity.y = base_jump
+			
+			animation_player.play("jump_release")
+			if floor(jump_mult*10) == 9:
+				animation_player.play("Backflip")
+		if animation_player.current_animation != "jump_prepare"\
+		and animation_player.current_animation != "Backflip"\
+		and !Input.is_action_pressed("jump"):
+			if velocity != Vector3.ZERO:
+				animation_player.play("Wiggle")
+			else:
+				animation_player.play("Idle")
+		if Input.is_action_pressed("crouch"):
+			animation_player.play("Crouch")
+		
+		is_sprinting = false
+		if Input.is_action_pressed("shift"):
+			is_sprinting = true
+	if !is_on_floor(): 
+		velocity.y -= gravity * delta
+	_input_direction()
+	if is_sprinting:
+		velocity *= Vector3(1.5,1,1.5)
+	
+	# Track previous velocity for bounce detection
+	var was_falling = previous_velocity_y < 0
+	previous_velocity_y = velocity.y
+	
+	move_and_slide()
+	
+	# Check for trampoline bounce when landing
+	if is_on_floor() and was_falling:
+		var collision = get_last_slide_collision()
+		if collision:
+			var collider = collision.get_collider()
+			if collider and collider.is_in_group("Trampoline"):
+				# Calculate bounce based on fall velocity (with damping)
+				var fall_velocity = abs(previous_velocity_y)
+				var bounce_velocity = TRAMPOLINE_BOUNCE_BASE + (fall_velocity * TRAMPOLINE_BOUNCE_DAMPING)
+				
+				# If jump is pressed while landing, boost the bounce
+				if Input.is_action_pressed("jump"):
+					bounce_velocity *= TRAMPOLINE_JUMP_BOOST
+				
+				velocity.y = bounce_velocity
+
+func _unhandled_input(event: InputEvent) -> void:
+	if!is_multiplayer_authority(): return
+	if event is InputEventMouseMotion:
+		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+			_camera_rotation(event)
+	
+	if Input.is_action_just_pressed("tab"):
+		toggle_first_person(!first_person)
+		
+	pick_up_item()
+
+func _camera_rotation(event):
+	twist_input = - event.relative.x * mouse_sensativity
+	pitch_input = - event.relative.y * mouse_sensativity
+	twist_pivot.rotate_y(twist_input)
+	material.rotation.y += twist_input
+	pitch_pivot.rotate_x(pitch_input)
+	pitch_pivot.rotation.x = clamp(pitch_pivot.rotation.x, -1.5, 1)
+	twist_input = 0.0
+	pitch_input = 0.0
+
+func _input_direction():
+	var input_dir = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var direction = (twist_pivot.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	if direction:
+		velocity.x = direction.x * SPEED
+		velocity.z = direction.z * SPEED
+	else:
+		velocity.x = move_toward(velocity.x, 0, SPEED)
+		velocity.z = move_toward(velocity.z, 0, SPEED)
+
+func toggle_first_person(t_or_f):
+	first_person = t_or_f
+	swing_arm.spring_length = 0 if t_or_f else 1
+	swing_arm.position.y = 0
+	swing_arm.position.z = 0
+	self.visible  = !t_or_f
+
+func pick_up_item():
+	if item_in_hand:
+		if Input.is_action_just_released("left_click"):
+			item_in_hand.throw.rpc(flip_power)
+		if Input.is_action_just_pressed("right_click"):
+			item_in_hand.drop.rpc()
+		return
+	else:
+		var collider = interact.get_collider()
+		if collider != null and collider is RigidBody3D and !collider.is_held:
+			if Input.is_action_just_pressed("interact"):
+				pick_up(collider)
+
+func pick_up(item: HoldableClass, id = multiplayer.get_unique_id()):
+	if multiplayer.get_unique_id() == id: 
+		interact.collide_with_bodies = false
+		item.linear_velocity = Vector3.ZERO
+		item.angular_velocity = Vector3.ZERO
+		item_in_hand = item
+		item.hold.rpc(id)
+
+@rpc("any_peer", "call_local")
+func set_color(col):
+	color = col
+	
+	# Get the material from the mesh
+	var mat: StandardMaterial3D = material.mesh.surface_get_material(0)
+	
+	# If no material exists, create one
+	if mat == null:
+		mat = StandardMaterial3D.new()
+		material.mesh.surface_set_material(0, mat)
+	
+	# Now set the albedo color
+	mat.albedo_color = col
+
+#func ascend_stairs(delta):
+#	var collision = move_and_collide(velocity * delta, true)
+#	if is_on_floor() and collision: 
+#		if collision.get_collider().name == "StaticBody3D":
+#			var test_velocity = velocity
+#			test_velocity.y = 50
+#			var test_move = move_and_collide(test_velocity * delta, true)
+#			if !test_move:
+##				velocity.y = move_toward(0, 3, SPEED)
+#				move_and_collide(test_velocity * delta)

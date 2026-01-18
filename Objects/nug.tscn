@@ -1,0 +1,45 @@
+[gd_scene load_steps=6 format=3 uid="uid://i5j6f8xxx2op"]
+
+[ext_resource type="PackedScene" uid="uid://bvo6gp4n0t8w3" path="res://Assets/Objects/Nug/Nug.glb" id="1_jciax"]
+[ext_resource type="Script" uid="uid://7gbbe4i1kykg" path="res://Objects/nug.gd" id="2_hhsrv"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6vt0p"]
+radius = 0.117647
+height = 0.46
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fhu6l"]
+shading_mode = 0
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_gb64x"]
+material = SubResource("StandardMaterial3D_fhu6l")
+flip_faces = true
+radius = 0.12
+height = 0.46
+
+[node name="Nug" groups=["Other"] instance=ExtResource("1_jciax")]
+collision_layer = 4
+collision_mask = 5
+script = ExtResource("2_hhsrv")
+
+[node name="meshNode" parent="Sketchfab_model/dfd8fdae9f364dc49b1818102de65e36_fbx/RootNode" index="0"]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 1.77636e-15, 0, -1.77636e-15, 0.1, 0, 3.27826e-07, 1.71798)
+
+[node name="meshNode_Material_u1_v1_0" parent="Sketchfab_model/dfd8fdae9f364dc49b1818102de65e36_fbx/RootNode/meshNode" index="0"]
+transform = Transform3D(0.66, 0, 0, 0, 0.66, 0, 0, 0, 0.66, 0, 2.7851, -1.47587)
+
+[node name="meshNode_Material_u1_v1_0_001" parent="Sketchfab_model/dfd8fdae9f364dc49b1818102de65e36_fbx/RootNode/meshNode" index="1"]
+transform = Transform3D(0.66, 0, 0, 0, 0.66, 0, 0, 0, 0.66, 0, 2.7851, -1.47587)
+
+[node name="meshNode_Material_u1_v1_0_002" parent="Sketchfab_model/dfd8fdae9f364dc49b1818102de65e36_fbx/RootNode/meshNode" index="2"]
+transform = Transform3D(0.66, 0, 0, 0, 0.66, 0, 0, 0, 0.66, 0, 2.7851, -1.47587)
+
+[node name="meshNode_Material_u1_v1_0_003" parent="Sketchfab_model/dfd8fdae9f364dc49b1818102de65e36_fbx/RootNode/meshNode" index="3"]
+transform = Transform3D(0.66, 0, 0, 0, 0.66, 0, 0, 0, 0.66, 0, 2.7851, -1.47587)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." index="1"]
+transform = Transform3D(0.66, 0, 0, 0, 0.66, 0, 0, 0, 0.66, -0.0121133, 0.129288, 0.00991397)
+shape = SubResource("CapsuleShape3D_6vt0p")
+
+[node name="Outline" type="MeshInstance3D" parent="." index="2"]
+transform = Transform3D(0.66, 0, 0, 0, 0.66, 0, 0, 0, 0.66, -0.0124741, 0.130769, 0.00768403)
+mesh = SubResource("CapsuleMesh_gb64x")

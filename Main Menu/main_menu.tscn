@@ -1,0 +1,82 @@
+[gd_scene load_steps=2 format=3 uid="uid://dkxp5ekh2aahf"]
+
+[ext_resource type="Script" path="res://Main Menu/MultiplayerController.gd" id="1_aqckk"]
+
+[node name="Main Menu" type="CanvasLayer"]
+script = ExtResource("1_aqckk")
+
+[node name="MainMenu" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -223.0
+offset_top = -184.0
+offset_right = 223.0
+offset_bottom = 184.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MainMenu"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainMenu/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MainMenu/MarginContainer/VBoxContainer"]
+modulate = Color(0.992188, 0.992188, 0.996094, 1)
+layout_mode = 2
+text = "Main Menu"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainMenu/MarginContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="NameLabel" type="Label" parent="MainMenu/MarginContainer/VBoxContainer/MarginContainer/HBoxContainer2"]
+modulate = Color(0.992188, 0.992188, 0.996094, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Name:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NameEntry" type="LineEdit" parent="MainMenu/MarginContainer/VBoxContainer/MarginContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+placeholder_text = "Enter Username..."
+alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HostButton" type="Button" parent="MainMenu/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Host"
+
+[node name="JoinButton" type="Button" parent="MainMenu/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Join"
+
+[node name="AddressEntry" type="LineEdit" parent="MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Enter Address..."
+alignment = 1
+
+[connection signal="pressed" from="MainMenu/MarginContainer/VBoxContainer/HBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
+[connection signal="pressed" from="MainMenu/MarginContainer/VBoxContainer/HBoxContainer/JoinButton" to="." method="_on_join_button_pressed"]
