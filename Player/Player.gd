@@ -12,7 +12,8 @@ var flip_power = 0
 @onready var flip_power_label = $MarginContainer/FlipPowerLabel
 @onready var its_garbage = $MarginContainer/ItsGarbage
 @onready var camera = $TwistPivot/PitchPivot/SpringArm3D/Camera3D
-@onready var material = $CollisionShape3D/MeshInstance3D
+#@onready var material = $CollisionShape3D/MeshInstance3D
+@onready var material = $"3DGodotRobot"
 @onready var swing_arm = $TwistPivot/PitchPivot/SpringArm3D
 @onready var interact = $TwistPivot/PitchPivot/Interact
 @onready var hand = $TwistPivot/PitchPivot/Hand
@@ -24,7 +25,7 @@ var item_in_hand
 var mouse_sensativity := 0.001
 var twist_input := 0.0
 var pitch_input := 0.0
-@onready var animation_player = $AnimationPlayer
+@onready var animation_player = $"3DGodotRobot/AnimationPlayer"
 
 var spawn_origin: Vector3
 var hand_origin: Vector3
@@ -67,7 +68,7 @@ func _process(delta):
 				flip_power_label.text = "Dat Wrist!"
 			flip_power_label.visible = true
 	
-	if animation_player.current_animation == "Backflip":
+	if animation_player.current_animation == "T-pose":
 		var flip_rotation = deg_to_rad(lerp(0,360,animation_player.current_animation_position/animation_player.current_animation_length))
 		if first_person:
 			pitch_pivot.rotation.x = flip_rotation
@@ -75,7 +76,7 @@ func _process(delta):
 	
 	if is_on_floor():
 		if Input.is_action_just_pressed("jump"):
-			animation_player.play("jump_prepare")
+			animation_player.play("Crouch")
 		if Input.is_action_just_released("jump"):
 			var jump_mult = animation_player.current_animation_position/animation_player.current_animation_length
 			var base_jump = JUMP_VELOCITY + JUMP_VELOCITY*jump_mult
@@ -94,14 +95,14 @@ func _process(delta):
 			else:
 				velocity.y = base_jump
 			
-			animation_player.play("jump_release")
+			animation_player.play("Jump")
 			if floor(jump_mult*10) == 9:
-				animation_player.play("Backflip")
-		if animation_player.current_animation != "jump_prepare"\
-		and animation_player.current_animation != "Backflip"\
+				animation_player.play("T-Pose")
+		if animation_player.current_animation != "Crouch"\
+		and animation_player.current_animation != "T-pose"\
 		and !Input.is_action_pressed("jump"):
 			if velocity != Vector3.ZERO:
-				animation_player.play("Wiggle")
+				animation_player.play("Run")
 			else:
 				animation_player.play("Idle")
 		if Input.is_action_pressed("crouch"):
@@ -171,7 +172,7 @@ func _input_direction():
 
 func toggle_first_person(t_or_f):
 	first_person = t_or_f
-	swing_arm.spring_length = 0 if t_or_f else 1
+	swing_arm.spring_length = 0 if t_or_f else 2
 	swing_arm.position.y = 0
 	swing_arm.position.z = 0
 	self.visible  = !t_or_f
@@ -200,17 +201,11 @@ func pick_up(item: HoldableClass, id = multiplayer.get_unique_id()):
 @rpc("any_peer", "call_local")
 func set_color(col):
 	color = col
-	
-	# Get the material from the mesh
-	var mat: StandardMaterial3D = material.mesh.surface_get_material(0)
-	
-	# If no material exists, create one
-	if mat == null:
-		mat = StandardMaterial3D.new()
-		material.mesh.surface_set_material(0, mat)
-	
-	# Now set the albedo color
-	mat.albedo_color = col
+	var robot_multi_mesh = [$"3DGodotRobot/RobotArmature/Skeleton3D/Bottom",$"3DGodotRobot/RobotArmature/Skeleton3D/Chest",$"3DGodotRobot/RobotArmature/Skeleton3D/Face",$"3DGodotRobot/RobotArmature/Skeleton3D/Llimbs and head"]
+	for mesh: MeshInstance3D in robot_multi_mesh:
+		var mat = mesh.get_surface_override_material(0)
+		if mat != null:
+			mat.albedo_color = col
 
 #func ascend_stairs(delta):
 #	var collision = move_and_collide(velocity * delta, true)

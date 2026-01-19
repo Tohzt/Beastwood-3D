@@ -20,7 +20,7 @@ window/size/initial_position_type=2
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/Mirror/plugin.cfg", "res://addons/deformablemesh/plugin.cfg")
+enabled=PackedStringArray("res://addons/Mirror/plugin.cfg")
 
 [filesystem]
 
