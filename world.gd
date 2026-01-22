@@ -215,14 +215,18 @@ func _on_orange_button_pressed():
 
 func _set_player_color(col):
 	var players = get_tree().get_nodes_in_group("Players")
+	var my_id = multiplayer.get_unique_id()
 	for player in players:
-		if int(str(player.name)) == multiplayer.get_unique_id():
+		var player_id = int(str(player.name))
+		if player_id == my_id:
+			print("[CLIENT] Setting color for player %d (me)" % player_id)
+			# Call directly on local player (runs immediately)
+			player.set_color(col)
+			# Then RPC to sync to server and other clients
 			player.set_color.rpc(col)
 			break  # Found our player, no need to continue
 	color_picker.hide()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	# Removed _update_colors.rpc() - it was causing all players to get the same color
-	# The set_color.rpc() above already syncs the color to all clients
 
 @rpc("any_peer")
 func _update_colors():

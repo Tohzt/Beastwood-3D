@@ -199,22 +199,44 @@ func pick_up(item: HoldableClass, id = multiplayer.get_unique_id()):
 		item_in_hand = item
 		item.hold.rpc(id)
 
-@rpc("any_peer", "call_local", "reliable")
+@rpc("any_peer", "call_remote")
 func set_color(col):
-	# Only apply color to this specific player instance
-	# The RPC is called on a specific player node, so it should only affect that node
+	# Allow any peer to call, but verify it's the correct player
+	# call_remote: runs on all remote peers (server and other clients)
+	var player_id = int(str(name))
+	var sender_id = multiplayer.get_remote_sender_id()
+	
+	# Verify the sender is the authority for this player instance
+	# sender_id == 0 means it's a local call (the authority calling directly)
+	# sender_id == player_id means the RPC is from the authority (the player who owns this character)
+	if sender_id != 0 and sender_id != player_id:
+		print("[WARNING] set_color RPC received for wrong player! Player ID: %d, Sender ID: %d" % [player_id, sender_id])
+		return
+	
+	var is_client = not multiplayer.is_server() and not is_multiplayer_authority()
+	print("[PLAYER %s] Setting color to %s (authority: %s, is_server: %s, is_client: %s, sender: %d)" % [name, col, is_multiplayer_authority(), multiplayer.is_server(), is_client, sender_id])
 	color = col
 	var robot_multi_mesh = [$"3DGodotRobot/RobotArmature/Skeleton3D/Bottom",$"3DGodotRobot/RobotArmature/Skeleton3D/Chest",$"3DGodotRobot/RobotArmature/Skeleton3D/Face",$"3DGodotRobot/RobotArmature/Skeleton3D/Llimbs and head", $"3DGodotRobot/Thing/RootNode/CharacterArmature/Skeleton3D/FinnTheFrog"]
+	
+	# Handle the frog mesh separately (it uses get_active_material instead of surface_override)
+	var frog_mesh = $"3DGodotRobot/Thing/RootNode/CharacterArmature/Skeleton3D/FinnTheFrog"
+	if frog_mesh:
+		var frog_mat: StandardMaterial3D = frog_mesh.get_active_material(0)
+		if frog_mat is StandardMaterial3D:
+			var new_mat = frog_mat.duplicate()
+			new_mat.albedo_color = col
+			frog_mesh.set_surface_override_material(0, new_mat)
+	
+	# Handle all other meshes
 	for mesh: MeshInstance3D in robot_multi_mesh:
-		if mesh == $"3DGodotRobot/Thing/RootNode/CharacterArmature/Skeleton3D/FinnTheFrog":
-			var frog_mat: StandardMaterial3D = mesh.get_active_material(0)
-			# Now you can set the albedo color
-			if frog_mat is StandardMaterial3D:
-				frog_mat.albedo_color = col
-			return
+		if mesh == frog_mesh:
+			continue  # Already handled above
 		var mat = mesh.get_surface_override_material(0)
 		if mat != null:
-			mat.albedo_color = col
+			# Duplicate material to avoid sharing between player instances
+			var new_mat = mat.duplicate()
+			new_mat.albedo_color = col
+			mesh.set_surface_override_material(0, new_mat)
 
 #func ascend_stairs(delta):
 #	var collision = move_and_collide(velocity * delta, true)
