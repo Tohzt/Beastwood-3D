@@ -53,6 +53,9 @@ func _on_peer_connected_dedicated(peer_id):
 		print("[SERVER] Player %d is now the admin" % peer_id)
 		_sync_admin_id.rpc(peer_id)
 	add_player(peer_id)
+	# Sync existing player colors to the new peer after a short delay
+	# (wait for the new player's node to be ready)
+	_sync_colors_to_peer.call_deferred(peer_id)
 
 func _on_peer_disconnected_dedicated(peer_id):
 	print("[SERVER] Player disconnected: %d" % peer_id)
@@ -233,6 +236,22 @@ func _update_colors():
 	var players = get_tree().get_nodes_in_group("Players")
 	for player in players:
 			player.set_color.rpc(player.color)
+
+func _sync_colors_to_peer(peer_id):
+	# Server-only: send all existing player colors to a newly connected peer
+	if not multiplayer.is_server():
+		return
+	# Wait a couple frames for the new peer's nodes to be ready
+	await get_tree().process_frame
+	await get_tree().process_frame
+	print("[SERVER] Syncing existing player colors to peer %d" % peer_id)
+	var players = get_tree().get_nodes_in_group("Players")
+	for player in players:
+		var player_color = player.color
+		# Only sync if player has a non-default color (not black)
+		if player_color != Color(0, 0, 0, 1):
+			print("[SERVER] Sending color %s for player %s to peer %d" % [player_color, player.name, peer_id])
+			player.set_color.rpc_id(peer_id, player_color)
 
 func _on_color_button_pressed():
 	pause_menu.hide()

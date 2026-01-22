@@ -205,17 +205,23 @@ func set_color(col):
 	# call_remote: runs on all remote peers (server and other clients)
 	var player_id = int(str(name))
 	var sender_id = multiplayer.get_remote_sender_id()
-	
-	# Verify the sender is the authority for this player instance
-	# sender_id == 0 means it's a local call (the authority calling directly)
-	# sender_id == player_id means the RPC is from the authority (the player who owns this character)
-	if sender_id != 0 and sender_id != player_id:
+
+	# Validate sender: allow if:
+	# - sender_id == 0: local call (authority calling directly)
+	# - sender_id == player_id: RPC from the player who owns this character
+	# - sender_id == 1: server relaying color to clients
+	var is_valid = (sender_id == 0) or (sender_id == player_id) or (sender_id == 1)
+	if not is_valid:
 		print("[WARNING] set_color RPC received for wrong player! Player ID: %d, Sender ID: %d" % [player_id, sender_id])
 		return
-	
-	var is_client = not multiplayer.is_server() and not is_multiplayer_authority()
-	print("[PLAYER %s] Setting color to %s (authority: %s, is_server: %s, is_client: %s, sender: %d)" % [name, col, is_multiplayer_authority(), multiplayer.is_server(), is_client, sender_id])
+
+	print("[PLAYER %s] Setting color to %s (is_server: %s, sender: %d)" % [name, col, multiplayer.is_server(), sender_id])
 	color = col
+
+	# SERVER RELAY: If we're the server and received this from a client, relay to all other clients
+	# This is needed because in ENet, client RPCs only go to server, not other clients
+	if multiplayer.is_server() and sender_id != 0 and sender_id != 1:
+		set_color.rpc(col)
 	var robot_multi_mesh = [$"3DGodotRobot/RobotArmature/Skeleton3D/Bottom",$"3DGodotRobot/RobotArmature/Skeleton3D/Chest",$"3DGodotRobot/RobotArmature/Skeleton3D/Face",$"3DGodotRobot/RobotArmature/Skeleton3D/Llimbs and head", $"3DGodotRobot/Thing/RootNode/CharacterArmature/Skeleton3D/FinnTheFrog"]
 	
 	# Handle the frog mesh separately (it uses get_active_material instead of surface_override)
