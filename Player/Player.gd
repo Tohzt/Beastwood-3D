@@ -25,7 +25,8 @@ var item_in_hand
 var mouse_sensativity := 0.001
 var twist_input := 0.0
 var pitch_input := 0.0
-@onready var animation_player = $"3DGodotRobot/AnimationPlayer"
+#@onready var animation_player = $"3DGodotRobot/AnimationPlayer"
+@onready var animation_player = $"3DGodotRobot/Thing/AnimationPlayer"
 
 var spawn_origin: Vector3
 var hand_origin: Vector3
@@ -36,7 +37,7 @@ func _enter_tree():
 	set_multiplayer_authority(str(name).to_int())
 
 func _ready():
-	animation_player.play("Idle")
+	animation_player.play("CharacterArmature|Idle")
 	if not is_multiplayer_authority(): return
 	get_parent().mirror.MainCamPath = camera.get_path()
 	toggle_first_person(first_person)
@@ -50,7 +51,6 @@ func _process(delta):
 	## TODO: Weird Garbage pre-garbage
 	var selected_item = interact.get_collider()
 	if selected_item:
-		print("pointing at: ", selected_item.name)
 		if selected_item.name == "Garbage" and Input.is_action_just_pressed("interact"):
 			if !its_garbage.visible:
 				its_garbage.show()
@@ -76,7 +76,7 @@ func _process(delta):
 	
 	if is_on_floor():
 		if Input.is_action_just_pressed("jump"):
-			animation_player.play("Crouch")
+			animation_player.play("CharacterArmature|Crouch")
 		if Input.is_action_just_released("jump"):
 			var jump_mult = animation_player.current_animation_position/animation_player.current_animation_length
 			var base_jump = JUMP_VELOCITY + JUMP_VELOCITY*jump_mult
@@ -95,18 +95,18 @@ func _process(delta):
 			else:
 				velocity.y = base_jump
 			
-			animation_player.play("Jump")
+			animation_player.play("CharacterArmature|Jump")
 			if floor(jump_mult*10) == 9:
-				animation_player.play("T-Pose")
+				animation_player.play("CharacterArmature|T-Pose")
 		if animation_player.current_animation != "Crouch"\
 		and animation_player.current_animation != "T-pose"\
 		and !Input.is_action_pressed("jump"):
 			if velocity != Vector3.ZERO:
-				animation_player.play("Run")
+				animation_player.play("CharacterArmature|Run")
 			else:
-				animation_player.play("Idle")
+				animation_player.play("CharacterArmature|Idle")
 		if Input.is_action_pressed("crouch"):
-			animation_player.play("Crouch")
+			animation_player.play("CharacterArmature|Crouch")
 		
 		is_sprinting = false
 		if Input.is_action_pressed("shift"):
@@ -201,8 +201,14 @@ func pick_up(item: HoldableClass, id = multiplayer.get_unique_id()):
 @rpc("any_peer", "call_local")
 func set_color(col):
 	color = col
-	var robot_multi_mesh = [$"3DGodotRobot/RobotArmature/Skeleton3D/Bottom",$"3DGodotRobot/RobotArmature/Skeleton3D/Chest",$"3DGodotRobot/RobotArmature/Skeleton3D/Face",$"3DGodotRobot/RobotArmature/Skeleton3D/Llimbs and head"]
+	var robot_multi_mesh = [$"3DGodotRobot/RobotArmature/Skeleton3D/Bottom",$"3DGodotRobot/RobotArmature/Skeleton3D/Chest",$"3DGodotRobot/RobotArmature/Skeleton3D/Face",$"3DGodotRobot/RobotArmature/Skeleton3D/Llimbs and head", $"3DGodotRobot/Thing/RootNode/CharacterArmature/Skeleton3D/FinnTheFrog"]
 	for mesh: MeshInstance3D in robot_multi_mesh:
+		if mesh == $"3DGodotRobot/Thing/RootNode/CharacterArmature/Skeleton3D/FinnTheFrog":
+			var frog_mat: StandardMaterial3D = mesh.get_active_material(0)
+			# Now you can set the albedo color
+			if frog_mat is StandardMaterial3D:
+				frog_mat.albedo_color = col
+			return
 		var mat = mesh.get_surface_override_material(0)
 		if mat != null:
 			mat.albedo_color = col
