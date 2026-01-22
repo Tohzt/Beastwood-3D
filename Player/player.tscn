@@ -23,18 +23,15 @@ properties/2/replication_mode = 1
 properties/3/path = NodePath("TwistPivot/PitchPivot/Hand:position")
 properties/3/spawn = true
 properties/3/replication_mode = 1
-properties/4/path = NodePath("DeformableMeshInstance3D:rotation")
+properties/4/path = NodePath("3DGodotRobot/Thing/AnimationPlayer:current_animation")
 properties/4/spawn = true
 properties/4/replication_mode = 1
-properties/5/path = NodePath("AnimationPlayer:current_animation")
+properties/5/path = NodePath(".:rotation")
 properties/5/spawn = true
 properties/5/replication_mode = 1
-properties/6/path = NodePath(".:color")
+properties/6/path = NodePath("3DGodotRobot:rotation")
 properties/6/spawn = true
 properties/6/replication_mode = 1
-properties/7/path = NodePath(".:rotation")
-properties/7/spawn = true
-properties/7/replication_mode = 1
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gwnis"]
 render_priority = 1

@@ -12,18 +12,77 @@ const Player = preload("res://Player/player.tscn")
 const PORT = 8910
 @export var Address = "127.0.0.1"
 var enet_peer
+var is_dedicated_server := false
+var admin_peer_id := -1  # First player to connect becomes admin
 
 func _ready():
 	ThreeOnOnePole.hide()
 	color_picker.hide()
 	pause_menu.hide()
-	login_menu.show()
+
+	# Check for dedicated server mode via command line
+	var args = OS.get_cmdline_args()
+	if "--server" in args:
+		_start_dedicated_server()
+	else:
+		login_menu.show()
+
+func _start_dedicated_server():
+	is_dedicated_server = true
+	login_menu.hide()
+	print("[SERVER] Starting dedicated server on port %d..." % PORT)
+
+	enet_peer = ENetMultiplayerPeer.new()
+	var error = enet_peer.create_server(PORT)
+	if error != OK:
+		print("[SERVER] Failed to create server: %s" % error_string(error))
+		get_tree().quit(1)
+		return
+
+	enet_peer.get_host().compress(ENetConnection.COMPRESS_RANGE_CODER)
+	multiplayer.set_multiplayer_peer(enet_peer)
+	multiplayer.peer_connected.connect(_on_peer_connected_dedicated)
+	multiplayer.peer_disconnected.connect(_on_peer_disconnected_dedicated)
+	print("[SERVER] Server started successfully. Waiting for players...")
+
+func _on_peer_connected_dedicated(peer_id):
+	print("[SERVER] Player connected: %d" % peer_id)
+	# First player becomes admin
+	if admin_peer_id == -1:
+		admin_peer_id = peer_id
+		print("[SERVER] Player %d is now the admin" % peer_id)
+		_sync_admin_id.rpc(peer_id)
+	add_player(peer_id)
+
+func _on_peer_disconnected_dedicated(peer_id):
+	print("[SERVER] Player disconnected: %d" % peer_id)
+	remove_player(peer_id)
+	# If admin disconnects, promote the next player
+	if peer_id == admin_peer_id:
+		var players = get_tree().get_nodes_in_group("Players")
+		if players.size() > 0:
+			admin_peer_id = int(str(players[0].name))
+			print("[SERVER] New admin: %d" % admin_peer_id)
+			_sync_admin_id.rpc(admin_peer_id)
+		else:
+			admin_peer_id = -1
+			print("[SERVER] No players remaining, no admin")
+
+func is_admin() -> bool:
+	if is_dedicated_server:
+		return false  # Server itself is never "admin" in gameplay sense
+	# On client: check if we are the admin
+	return multiplayer.get_unique_id() == admin_peer_id or multiplayer.is_server()
+
+@rpc("authority", "call_remote", "reliable")
+func _sync_admin_id(peer_id):
+	admin_peer_id = peer_id
 
 func _unhandled_input(_event):
 	if Input.is_action_just_pressed("ui_cancel"):
 		if login_menu.visible == false and color_picker.visible == false: 
 			if pause_menu.visible == false:
-				other_respawns.visible = is_multiplayer_authority()
+				other_respawns.visible = is_admin()
 				pause_menu.show()
 				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			else:
@@ -59,12 +118,28 @@ func _on_join_button_pressed():
 	enet_peer.create_client(Address, PORT)
 	enet_peer.get_host().compress(ENetConnection.COMPRESS_RANGE_CODER)
 	multiplayer.set_multiplayer_peer(enet_peer)
+	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	multiplayer.peer_connected.connect(add_player)
+	multiplayer.peer_disconnected.connect(remove_player)
+
+func _on_connected_to_server():
+	print("[CLIENT] Connected to server, waiting for player spawn...")
 
 func add_player(peer_id):
+	# Only server should spawn players
+	if not multiplayer.is_server():
+		print("[CLIENT] Ignoring add_player call - not server")
+		return
+		
+	print("[SERVER] Spawning player for peer: %d at position: %s" % [peer_id, spawn_player.position])
 	var player = Player.instantiate()
 	player.name = str(peer_id)
+	# Set position after adding to ensure it's set correctly
+	add_child(player, true)  # force_readable_name = true for multiplayer
+	# Wait a frame for the node to be fully in the tree, then set position
+	await get_tree().process_frame
 	player.position = spawn_player.position
-	add_child(player)
+	print("[SERVER] Player %d spawned at: %s" % [peer_id, player.position])
 
 @rpc("any_peer")
 func remove_player(id):
@@ -143,9 +218,11 @@ func _set_player_color(col):
 	for player in players:
 		if int(str(player.name)) == multiplayer.get_unique_id():
 			player.set_color.rpc(col)
+			break  # Found our player, no need to continue
 	color_picker.hide()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	_update_colors.rpc()
+	# Removed _update_colors.rpc() - it was causing all players to get the same color
+	# The set_color.rpc() above already syncs the color to all clients
 
 @rpc("any_peer")
 func _update_colors():

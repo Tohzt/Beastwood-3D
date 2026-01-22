@@ -76,7 +76,7 @@ func _process(delta):
 	
 	if is_on_floor():
 		if Input.is_action_just_pressed("jump"):
-			animation_player.play("CharacterArmature|Crouch")
+			animation_player.play("CharacterArmature|Wave")
 		if Input.is_action_just_released("jump"):
 			var jump_mult = animation_player.current_animation_position/animation_player.current_animation_length
 			var base_jump = JUMP_VELOCITY + JUMP_VELOCITY*jump_mult
@@ -106,7 +106,7 @@ func _process(delta):
 			else:
 				animation_player.play("CharacterArmature|Idle")
 		if Input.is_action_pressed("crouch"):
-			animation_player.play("CharacterArmature|Crouch")
+			animation_player.play("CharacterArmature|Wave")
 		
 		is_sprinting = false
 		if Input.is_action_pressed("shift"):
@@ -153,9 +153,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _camera_rotation(event):
 	twist_input = - event.relative.x * mouse_sensativity
 	pitch_input = - event.relative.y * mouse_sensativity
-	twist_pivot.rotate_y(twist_input)
+	# Set rotation directly instead of using rotate methods for better sync detection
+	twist_pivot.rotation.y += twist_input
 	material.rotation.y += twist_input
-	pitch_pivot.rotate_x(pitch_input)
+	pitch_pivot.rotation.x += pitch_input
 	pitch_pivot.rotation.x = clamp(pitch_pivot.rotation.x, -1.5, 1)
 	twist_input = 0.0
 	pitch_input = 0.0
@@ -198,8 +199,10 @@ func pick_up(item: HoldableClass, id = multiplayer.get_unique_id()):
 		item_in_hand = item
 		item.hold.rpc(id)
 
-@rpc("any_peer", "call_local")
+@rpc("any_peer", "call_local", "reliable")
 func set_color(col):
+	# Only apply color to this specific player instance
+	# The RPC is called on a specific player node, so it should only affect that node
 	color = col
 	var robot_multi_mesh = [$"3DGodotRobot/RobotArmature/Skeleton3D/Bottom",$"3DGodotRobot/RobotArmature/Skeleton3D/Chest",$"3DGodotRobot/RobotArmature/Skeleton3D/Face",$"3DGodotRobot/RobotArmature/Skeleton3D/Llimbs and head", $"3DGodotRobot/Thing/RootNode/CharacterArmature/Skeleton3D/FinnTheFrog"]
 	for mesh: MeshInstance3D in robot_multi_mesh:
