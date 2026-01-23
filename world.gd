@@ -10,7 +10,7 @@ extends Node3D
 @export var play_3on1pole = false
 const Player = preload("res://Player/player.tscn")
 const PORT = 8910
-@export var Address = "127.0.0.1"
+@export var Address = "64.225.4.250"
 var enet_peer
 var is_dedicated_server := false
 var admin_peer_id := -1  # First player to connect becomes admin
@@ -51,7 +51,12 @@ func _on_peer_connected_dedicated(peer_id):
 	if admin_peer_id == -1:
 		admin_peer_id = peer_id
 		print("[SERVER] Player %d is now the admin" % peer_id)
-		_sync_admin_id.rpc(peer_id)
+		# Sync admin to all clients (including the new admin)
+		_sync_admin_id.rpc(admin_peer_id)
+	else:
+		# Sync current admin to the newly connected player
+		_sync_admin_id.rpc_id(peer_id, admin_peer_id)
+		print("[SERVER] Syncing admin %d to new player %d" % [admin_peer_id, peer_id])
 	add_player(peer_id)
 	# Sync existing player colors to the new peer after a short delay
 	# (wait for the new player's node to be ready)
@@ -60,6 +65,8 @@ func _on_peer_connected_dedicated(peer_id):
 func _on_peer_disconnected_dedicated(peer_id):
 	print("[SERVER] Player disconnected: %d" % peer_id)
 	remove_player(peer_id)
+	# Wait a frame for the player to be fully removed before checking
+	await get_tree().process_frame
 	# If admin disconnects, promote the next player
 	if peer_id == admin_peer_id:
 		var players = get_tree().get_nodes_in_group("Players")
@@ -69,7 +76,7 @@ func _on_peer_disconnected_dedicated(peer_id):
 			_sync_admin_id.rpc(admin_peer_id)
 		else:
 			admin_peer_id = -1
-			print("[SERVER] No players remaining, no admin")
+			print("[SERVER] No players remaining, admin reset")
 
 func is_admin() -> bool:
 	if is_dedicated_server:
