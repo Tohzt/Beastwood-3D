@@ -10,6 +10,9 @@ export.cfg
 export_credentials.cfg
 Exports/
 
+# Large asset files (over 50MB)
+Assets/Objects/Nug/Nug_Image_0.png
+
 # Imported translations (automatically generated from CSV files)
 *.translation
 
