@@ -1,11 +1,13 @@
 extends CharacterBody3D
 
 const SPEED = 4.0
-const JUMP_VELOCITY = 3.3
+const JUMP_VELOCITY = 3.3  # Initial upward velocity (applied on press)
+const JUMP_HOLD_GRAVITY_SCALE = 0.28  # While holding jump and moving up, gravity is reduced (Mario-style variable height)
 const TRAMPOLINE_JUMP_MULTIPLIER = 2.0
 const TRAMPOLINE_BOUNCE_BASE = 2.5
 const TRAMPOLINE_BOUNCE_DAMPING = 0.6
 const TRAMPOLINE_JUMP_BOOST = 1.5
+const LANDING_DEATH_SPEED = 25.0  # Fall speed (m/s) above which we play death animation on land
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 var previous_velocity_y = 0.0
 var flip_power = 0
@@ -32,18 +34,36 @@ var spawn_origin: Vector3
 var hand_origin: Vector3
 
 var is_sprinting: bool = false
+var was_in_air: bool = false  # Used for jump land animation
+var in_death_pose: bool = false  # Holding death last frame until player moves
 
 func _enter_tree():
 	set_multiplayer_authority(str(name).to_int())
 
 func _ready():
 	animation_player.play("CharacterArmature|Idle")
+	animation_player.animation_finished.connect(_on_animation_finished)
 	if not is_multiplayer_authority(): return
 	get_parent().mirror.MainCamPath = camera.get_path()
 	toggle_first_person(first_person)
 	spawn_origin = position
 	hand_origin = hand.position
 	camera.current = true
+
+func _on_animation_finished(anim_name: StringName) -> void:
+	if anim_name == "CharacterArmature|Jump":
+		# Jump plays once; go to Jump_Idle for the rest of the air time
+		if !is_on_floor():
+			animation_player.play("CharacterArmature|Jump_Idle")
+	elif anim_name == "CharacterArmature|Jump_Land":
+		# Transition to Idle/Run after landing animation
+		if velocity != Vector3.ZERO:
+			animation_player.play("CharacterArmature|Run")
+		else:
+			animation_player.play("CharacterArmature|Idle")
+	elif anim_name == "CharacterArmature|Death":
+		# Play Death_Idle until the player moves
+		animation_player.play("CharacterArmature|Death_Idle")
 
 func _process(delta):
 	if !is_multiplayer_authority(): return
@@ -75,33 +95,34 @@ func _process(delta):
 		material.rotation.x = flip_rotation
 	
 	if is_on_floor():
+		# Check if we're standing on a trampoline (don't play Idle/Run on trampoline)
+		var floor_collision = get_last_slide_collision()
+		var on_trampoline_now = false
+		if floor_collision:
+			var col = floor_collision.get_collider()
+			if col and col.is_in_group("Trampoline"):
+				on_trampoline_now = true
 		if Input.is_action_just_pressed("jump"):
-			animation_player.play("CharacterArmature|Wave")
-		if Input.is_action_just_released("jump"):
-			var jump_mult = animation_player.current_animation_position/animation_player.current_animation_length
-			var base_jump = JUMP_VELOCITY + JUMP_VELOCITY*jump_mult
-			
-			# Check if standing on a trampoline
-			var is_on_trampoline = false
-			var collision = get_last_slide_collision()
-			if collision:
-				var collider = collision.get_collider()
-				if collider and collider.is_in_group("Trampoline"):
-					is_on_trampoline = true
-			
-			# Apply trampoline multiplier if on trampoline
-			if is_on_trampoline:
+			var base_jump = JUMP_VELOCITY
+			if on_trampoline_now:
 				velocity.y = base_jump * TRAMPOLINE_JUMP_MULTIPLIER
 			else:
 				velocity.y = base_jump
-			
 			animation_player.play("CharacterArmature|Jump")
-			if floor(jump_mult*10) == 9:
-				animation_player.play("CharacterArmature|T-Pose")
-		if animation_player.current_animation != "Crouch"\
+		
+		# Only play Idle/Run on solid ground; don't override Jump/Jump_Land. Death holds last frame until player moves.
+		var move_input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		var getting_up = in_death_pose and move_input != Vector2.ZERO
+		if getting_up:
+			in_death_pose = false
+		if !on_trampoline_now\
+		and !Input.is_action_just_pressed("jump")\
+		and animation_player.current_animation != "Crouch"\
 		and animation_player.current_animation != "T-pose"\
-		and !Input.is_action_pressed("jump"):
-			if velocity != Vector3.ZERO:
+		and animation_player.current_animation != "CharacterArmature|Jump_Land"\
+		and animation_player.current_animation != "CharacterArmature|Jump"\
+		and !in_death_pose:
+			if velocity != Vector3.ZERO or getting_up:
 				animation_player.play("CharacterArmature|Run")
 			else:
 				animation_player.play("CharacterArmature|Idle")
@@ -111,8 +132,15 @@ func _process(delta):
 		is_sprinting = false
 		if Input.is_action_pressed("shift"):
 			is_sprinting = true
-	if !is_on_floor(): 
-		velocity.y -= gravity * delta
+	if !is_on_floor():
+		# Jump_Idle when falling, Jump when rising
+		if velocity.y < 0:
+			animation_player.play("CharacterArmature|Jump_Idle")
+		# Variable height: holding jump reduces gravity while moving up (Mario-style)
+		if Input.is_action_pressed("jump") and velocity.y > 0:
+			velocity.y -= gravity * JUMP_HOLD_GRAVITY_SCALE * delta
+		else:
+			velocity.y -= gravity * delta
 	_input_direction()
 	if is_sprinting:
 		velocity *= Vector3(1.5,1,1.5)
@@ -123,21 +151,31 @@ func _process(delta):
 	
 	move_and_slide()
 	
-	# Check for trampoline bounce when landing
+	# Check for trampoline bounce or play land animation when landing
 	if is_on_floor() and was_falling:
 		var collision = get_last_slide_collision()
+		var on_trampoline = false
 		if collision:
 			var collider = collision.get_collider()
 			if collider and collider.is_in_group("Trampoline"):
+				on_trampoline = true
 				# Calculate bounce based on fall velocity (with damping)
 				var fall_velocity = abs(previous_velocity_y)
 				var bounce_velocity = TRAMPOLINE_BOUNCE_BASE + (fall_velocity * TRAMPOLINE_BOUNCE_DAMPING)
-				
 				# If jump is pressed while landing, boost the bounce
 				if Input.is_action_pressed("jump"):
 					bounce_velocity *= TRAMPOLINE_JUMP_BOOST
-				
 				velocity.y = bounce_velocity
+				animation_player.play("CharacterArmature|Jump")
+		if !on_trampoline and was_in_air:
+			# Hard landing: play death; otherwise play land
+			if abs(previous_velocity_y) >= LANDING_DEATH_SPEED:
+				animation_player.play("CharacterArmature|Death")
+				in_death_pose = true
+			else:
+				animation_player.play("CharacterArmature|Jump_Land")
+	
+	was_in_air = !is_on_floor()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if!is_multiplayer_authority(): return
