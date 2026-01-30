@@ -9,6 +9,7 @@ export_presets.cfg
 export.cfg
 export_credentials.cfg
 Exports/
+Exports/*
 
 # Large asset files (over 50MB)
 Assets/Objects/Nug/Nug_Image_0.png
